@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-bar-chart-line me-2"></i>Reports</h1>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-md-4">
+    <div class="card h-100">
+      <div class="card-header">Attendance Report</div>
+      <div class="card-body">
+        <p class="text-muted small">View and export attendance percentages by section, subject, and date range.</p>
+        <a href="{{ url_for('reports.attendance_report') }}" class="btn btn-primary btn-sm">Open Report</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card h-100">
+      <div class="card-header">Students Report</div>
+      <div class="card-body">
+        <p class="text-muted small">List and export student records filtered by program and status.</p>
+        <a href="{{ url_for('reports.students_report') }}" class="btn btn-primary btn-sm">Open Report</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

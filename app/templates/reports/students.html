@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Students Report{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-table me-2"></i>Students Report</h1>
+</div>
+
+<form method="get" class="card card-body mb-4 py-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label class="form-label">Program</label>
+      <select name="program_id" class="form-select form-select-sm">
+        <option value="">All Programs</option>
+        {% for p in programs %}
+        <option value="{{ p.id }}" {% if program_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="active"   {% if status == 'active'   %}selected{% endif %}>Active</option>
+        <option value="archived" {% if status == 'archived' %}selected{% endif %}>Archived</option>
+        <option value="all"      {% if status == 'all'      %}selected{% endif %}>All</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-primary btn-sm">Filter</button>
+    </div>
+    <div class="col-auto">
+      <a href="{{ url_for('reports.students_report', program_id=program_id or '', status=status, export='csv') }}"
+         class="btn btn-outline-success btn-sm">
+        <i class="bi bi-download"></i> Export CSV
+      </a>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header">{{ students | length }} student(s)</div>
+  <div class="card-body p-0">
+    {% if students %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Roll No.</th>
+            <th>Name</th>
+            <th>Program</th>
+            <th>Email</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td class="font-monospace fw-semibold">{{ s.roll_number }}</td>
+            <td><a href="{{ url_for('students.detail', student_id=s.id) }}">{{ s.full_name }}</a></td>
+            <td>{{ s.program.name if s.program else '—' }}</td>
+            <td>{{ s.email or '—' }}</td>
+            <td><span class="badge badge-{{ s.status }}">{{ s.status | title }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center text-muted">No students match the selected filters.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

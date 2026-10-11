@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('academic.sections') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+  <h1>{{ title }}</h1>
+</div>
+<div class="row justify-content-center"><div class="col-12 col-lg-5">
+  <div class="card"><div class="card-header">Section Details</div><div class="card-body p-4">
+    <form method="post" novalidate>{{ form.hidden_tag() }}
+      <div class="mb-3">{{ form.program_id.label(class="form-label") }}{{ form.program_id(class="form-select") }}</div>
+      <div class="mb-3">{{ form.academic_year_id.label(class="form-label") }}{{ form.academic_year_id(class="form-select") }}</div>
+      <div class="mb-3">{{ form.semester.label(class="form-label") }}{{ form.semester(class="form-control", type="number", min=1) }}</div>
+      <div class="mb-3">{{ form.section_name.label(class="form-label") }}{{ form.section_name(class="form-control", placeholder="A, B, C…") }}</div>
+      <div class="d-flex gap-2">{{ form.submit(class="btn btn-primary") }}<a href="{{ url_for('academic.sections') }}" class="btn btn-outline-secondary">Cancel</a></div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

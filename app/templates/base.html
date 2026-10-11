@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ institution_name }}{% endblock %} &mdash; CSFMS</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<!-- Top navigation bar -->
+<nav class="navbar navbar-dark navbar-top px-3 py-2 d-flex align-items-center justify-content-between">
+  <button class="btn btn-link text-white p-0 sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+    <i class="bi bi-list fs-4"></i>
+  </button>
+  <span class="navbar-brand mb-0 fw-semibold">{{ institution_name }}</span>
+  <div class="d-flex align-items-center gap-2">
+    <span class="text-white-50 small d-none d-md-inline">{{ current_user.username }}</span>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light">
+      <i class="bi bi-box-arrow-right"></i> Sign Out
+    </a>
+  </div>
+</nav>
+
+<div class="d-flex" id="wrapper">
+  <!-- Sidebar -->
+  <nav id="sidebar" class="sidebar-nav">
+    <ul class="nav flex-column pt-3">
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}"
+           href="{{ url_for('main.dashboard') }}">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </li>
+
+      {% if current_user.is_admin() or current_user.is_dept_head() or current_user.is_faculty() %}
+      <li class="nav-section">Students</li>
+      <li class="nav-item">
+        <a class="nav-link {% if 'students' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('students.index') }}">
+          <i class="bi bi-people"></i> Student List
+        </a>
+      </li>
+      {% if current_user.is_admin() %}
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('students.add') }}">
+          <i class="bi bi-person-plus"></i> Add Student
+        </a>
+      </li>
+      {% endif %}
+      {% endif %}
+
+      {% if current_user.is_admin() or current_user.is_dept_head() %}
+      <li class="nav-section">Faculty</li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint and 'faculty.index' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('faculty.index') }}">
+          <i class="bi bi-person-badge"></i> Faculty List
+        </a>
+      </li>
+      {% if current_user.is_admin() %}
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('faculty.add') }}">
+          <i class="bi bi-person-plus-fill"></i> Add Faculty
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('faculty.assignments') }}">
+          <i class="bi bi-diagram-3"></i> Assignments
+        </a>
+      </li>
+      {% endif %}
+      {% endif %}
+
+      {% if current_user.is_admin() %}
+      <li class="nav-section">Academic Setup</li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('academic.departments') }}">
+          <i class="bi bi-building"></i> Departments
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('academic.programs') }}">
+          <i class="bi bi-mortarboard"></i> Programs
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('academic.academic_years') }}">
+          <i class="bi bi-calendar3"></i> Academic Years
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('academic.sections') }}">
+          <i class="bi bi-collection"></i> Sections
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('academic.subjects') }}">
+          <i class="bi bi-book"></i> Subjects
+        </a>
+      </li>
+      {% endif %}
+
+      <li class="nav-section">Attendance</li>
+      <li class="nav-item">
+        <a class="nav-link {% if 'attendance' in (request.endpoint or '') %}active{% endif %}"
+           href="{{ url_for('attendance.index') }}">
+          <i class="bi bi-clipboard-check"></i> Mark Attendance
+        </a>
+      </li>
+
+      <li class="nav-section">Reports</li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('reports.attendance_report') }}">
+          <i class="bi bi-bar-chart-line"></i> Attendance Report
+        </a>
+      </li>
+      {% if current_user.is_admin() or current_user.is_dept_head() %}
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('reports.students_report') }}">
+          <i class="bi bi-table"></i> Students Report
+        </a>
+      </li>
+      {% endif %}
+
+      {% if current_user.is_admin() %}
+      <li class="nav-section">Administration</li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('admin.users') }}">
+          <i class="bi bi-person-lock"></i> User Accounts
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('admin.audit_log') }}">
+          <i class="bi bi-journal-text"></i> Audit Log
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- Main content -->
+  <div id="content" class="flex-grow-1">
+    <div class="container-fluid py-4 px-4">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div><!-- #wrapper -->
+
+{% else %}
+<!-- Unauthenticated layout -->
+<div class="d-flex min-vh-100 align-items-center justify-content-center auth-bg">
+  {% block auth_content %}{% endblock %}
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

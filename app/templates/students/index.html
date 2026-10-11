@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1><i class="bi bi-people me-2"></i>Student Register</h1>
+  {% if current_user.is_admin() %}
+  <a href="{{ url_for('students.add') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus"></i> Add Student
+  </a>
+  {% endif %}
+</div>
+
+<!-- Filters -->
+<form method="get" class="card card-body mb-4 py-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label class="form-label">Search</label>
+      <input type="text" name="q" class="form-control form-control-sm"
+             value="{{ q }}" placeholder="Roll number or name&hellip;">
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Program</label>
+      <select name="program_id" class="form-select form-select-sm">
+        <option value="">All Programs</option>
+        {% for p in programs %}
+        <option value="{{ p.id }}" {% if program_id|string == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="active"    {% if status == 'active'   %}selected{% endif %}>Active</option>
+        <option value="archived"  {% if status == 'archived' %}selected{% endif %}>Archived</option>
+        <option value="all"       {% if status == 'all'      %}selected{% endif %}>All</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-primary btn-sm">Filter</button>
+      <a href="{{ url_for('students.index') }}" class="btn btn-outline-secondary btn-sm ms-1">Clear</a>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Students
+      <span class="badge bg-secondary ms-1">{{ students.total }}</span>
+    </span>
+  </div>
+  <div class="card-body p-0">
+    {% if students.items %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Roll No.</th>
+            <th>Name</th>
+            <th>Program</th>
+            <th>Section</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students.items %}
+          <tr>
+            <td class="fw-semibold font-monospace">{{ s.roll_number }}</td>
+            <td>{{ s.full_name }}</td>
+            <td>{{ s.program.name if s.program else '—' }}</td>
+            <td>{{ s.section.display_name if s.section else '—' }}</td>
+            <td><span class="badge badge-{{ s.status }}">{{ s.status | title }}</span></td>
+            <td class="text-end">
+              <a href="{{ url_for('students.detail', student_id=s.id) }}"
+                 class="btn btn-sm btn-outline-secondary">View</a>
+              {% if current_user.is_admin() %}
+              <a href="{{ url_for('students.edit', student_id=s.id) }}"
+                 class="btn btn-sm btn-outline-primary">Edit</a>
+              {% if s.status == 'active' %}
+              <button type="button" class="btn btn-sm btn-outline-danger"
+                      onclick="confirmArchive('{{ url_for('students.archive', student_id=s.id) }}',
+                               '{{ s.full_name }}')">Archive</button>
+              {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if students.pages > 1 %}
+    <div class="d-flex justify-content-center py-3">
+      <nav aria-label="Students pagination">
+        <ul class="pagination pagination-sm mb-0">
+          {% if students.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('students.index', page=students.prev_num, q=q, program_id=program_id, status=status) }}">&laquo;</a>
+          </li>
+          {% endif %}
+          {% for num in students.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if num %}
+            <li class="page-item {% if num == students.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('students.index', page=num, q=q, program_id=program_id, status=status) }}">{{ num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            {% endif %}
+          {% endfor %}
+          {% if students.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('students.index', page=students.next_num, q=q, program_id=program_id, status=status) }}">&raquo;</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="p-4 text-center text-muted">
+      <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+      No students found matching your filters.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Archive confirmation modal -->
+<div class="modal fade" id="archiveModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Archive</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Archive student <strong id="archiveName"></strong>? The record will be preserved in historical attendance.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="archiveForm" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Archive</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmArchive(url, name) {
+  document.getElementById('archiveName').textContent = name;
+  document.getElementById('archiveForm').action = url;
+  new bootstrap.Modal(document.getElementById('archiveModal')).show();
+}
+</script>
+{% endblock %}

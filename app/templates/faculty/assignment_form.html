@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('faculty.assignments') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1>{{ title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-header">Assignment Details</div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.faculty_id.label(class="form-label") }}
+            {{ form.faculty_id(class="form-select") }}
+          </div>
+          <div class="mb-3">
+            {{ form.section_id.label(class="form-label") }}
+            {{ form.section_id(class="form-select") }}
+          </div>
+          <div class="mb-3">
+            {{ form.subject_id.label(class="form-label") }}
+            {{ form.subject_id(class="form-select") }}
+          </div>
+          <div class="mb-4">
+            {{ form.academic_year_id.label(class="form-label") }}
+            {{ form.academic_year_id(class="form-select") }}
+          </div>
+          <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('faculty.assignments') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

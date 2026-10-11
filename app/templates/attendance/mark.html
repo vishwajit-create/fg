@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('attendance.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1><i class="bi bi-clipboard-check me-2"></i>Attendance Register</h1>
+</div>
+
+<!-- Session info banner -->
+<div class="card mb-4">
+  <div class="card-body py-2 px-3 d-flex flex-wrap gap-4 align-items-center small">
+    <span><strong>Date:</strong> {{ session.session_date.strftime('%d %B %Y') }}</span>
+    <span><strong>Section:</strong> {{ session.section.display_name }}</span>
+    <span><strong>Subject:</strong> {{ session.subject.code }} &mdash; {{ session.subject.title }}</span>
+    <span><strong>Period:</strong> {{ session.session_label }}</span>
+    <span><strong>Status:</strong>
+      <span class="badge badge-{{ session.status }}">{{ session.status | title }}</span>
+    </span>
+  </div>
+</div>
+
+{% if session.status == 'locked' %}
+<div class="alert alert-warning">
+  <i class="bi bi-lock-fill me-1"></i>
+  This register is <strong>locked</strong>. Contact an administrator to make any corrections.
+</div>
+{% endif %}
+
+{% if students %}
+<form method="post" id="attendanceForm">
+  {{ csrf_token()|safe if false }}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <!-- Mark all shortcut -->
+  <div class="mb-3 d-flex gap-2 align-items-center">
+    <span class="text-muted small">Mark all:</span>
+    <button type="button" class="btn btn-sm btn-outline-success" onclick="markAll('present')">Present</button>
+    <button type="button" class="btn btn-sm btn-outline-danger"  onclick="markAll('absent')">Absent</button>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th style="width:60px;">#</th>
+              <th>Roll No.</th>
+              <th>Student Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in students %}
+            {% set rec = existing.get(student.id) %}
+            <tr class="att-row">
+              <td class="text-muted">{{ loop.index }}</td>
+              <td class="font-monospace fw-semibold">{{ student.roll_number }}</td>
+              <td>{{ student.full_name }}</td>
+              <td>
+                <div class="btn-group att-status-btns" role="group">
+                  <input type="radio" class="btn-check" name="status_{{ student.id }}"
+                         id="p_{{ student.id }}" value="present" autocomplete="off"
+                         {% if rec and rec.status == 'present' %}checked{% endif %}
+                         {% if not rec %}checked{% endif %}
+                         {% if session.status in ('submitted', 'locked') and not current_user.is_admin() %}disabled{% endif %}>
+                  <label class="btn btn-sm btn-outline-success" for="p_{{ student.id }}">
+                    <i class="bi bi-check-lg"></i> Present
+                  </label>
+
+                  <input type="radio" class="btn-check" name="status_{{ student.id }}"
+                         id="a_{{ student.id }}" value="absent" autocomplete="off"
+                         {% if rec and rec.status == 'absent' %}checked{% endif %}
+                         {% if session.status in ('submitted', 'locked') and not current_user.is_admin() %}disabled{% endif %}>
+                  <label class="btn btn-sm btn-outline-danger" for="a_{{ student.id }}">
+                    <i class="bi bi-x-lg"></i> Absent
+                  </label>
+
+                  <input type="radio" class="btn-check" name="status_{{ student.id }}"
+                         id="l_{{ student.id }}" value="leave" autocomplete="off"
+                         {% if rec and rec.status == 'leave' %}checked{% endif %}
+                         {% if session.status in ('submitted', 'locked') and not current_user.is_admin() %}disabled{% endif %}>
+                  <label class="btn btn-sm btn-outline-warning" for="l_{{ student.id }}">
+                    <i class="bi bi-calendar-x"></i> Leave
+                  </label>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if session.status == 'submitted' and current_user.is_admin() %}
+  <div class="mt-3">
+    <label class="form-label">Correction Reason <span class="text-danger">*</span></label>
+    <textarea name="correction_reason" class="form-control" rows="2"
+              placeholder="State the reason for correction&hellip;" required></textarea>
+  </div>
+  {% endif %}
+
+  {% if session.status != 'locked' %}
+  <div class="mt-4 d-flex gap-2">
+    {% if session.status == 'submitted' and current_user.is_admin() %}
+      <button type="submit" name="submit" class="btn btn-warning">
+        <i class="bi bi-pencil-square"></i> Save Correction
+      </button>
+    {% else %}
+      <button type="submit" name="draft" class="btn btn-outline-secondary">
+        <i class="bi bi-floppy"></i> Save Draft
+      </button>
+      <button type="submit" name="submit" class="btn btn-primary"
+              onclick="return confirm('Submit this attendance register? Once submitted, corrections require administrator approval.');">
+        <i class="bi bi-check-circle"></i> Submit Register
+      </button>
+    {% endif %}
+    <a href="{{ url_for('attendance.index') }}" class="btn btn-link text-muted">Cancel</a>
+  </div>
+  {% endif %}
+</form>
+
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-1"></i>
+  No active enrolled students found for this section. Please enrol students first.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markAll(status) {
+  document.querySelectorAll('input[type=radio][value=' + status + ']').forEach(function(r){
+    r.checked = true;
+  });
+}
+</script>
+{% endblock %}

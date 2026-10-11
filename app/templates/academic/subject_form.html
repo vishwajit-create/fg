@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('academic.subjects') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+  <h1>{{ title }}</h1>
+</div>
+<div class="row justify-content-center"><div class="col-12 col-lg-6">
+  <div class="card"><div class="card-header">Subject Details</div><div class="card-body p-4">
+    <form method="post" novalidate>{{ form.hidden_tag() }}
+      <div class="row g-3">
+        <div class="col-12 col-md-4">{{ form.code.label(class="form-label") }}{{ form.code(class="form-control") }}</div>
+        <div class="col-12 col-md-8">{{ form.title.label(class="form-label") }}{{ form.title(class="form-control") }}</div>
+        <div class="col-12">{{ form.program_id.label(class="form-label") }}{{ form.program_id(class="form-select") }}</div>
+        <div class="col-6">{{ form.semester.label(class="form-label") }}{{ form.semester(class="form-control", type="number", min=1) }}</div>
+        <div class="col-6">{{ form.credits.label(class="form-label") }}{{ form.credits(class="form-control", type="number", min=0) }}</div>
+      </div>
+      <div class="d-flex gap-2 mt-4">{{ form.submit(class="btn btn-primary") }}<a href="{{ url_for('academic.subjects') }}" class="btn btn-outline-secondary">Cancel</a></div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

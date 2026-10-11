@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Teaching Assignments{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-diagram-3 me-2"></i>Teaching Assignments</h1>
+  <a href="{{ url_for('faculty.add_assignment') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> New Assignment
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if assignments %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Faculty</th>
+            <th>Section</th>
+            <th>Subject</th>
+            <th>Academic Year</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assignments %}
+          <tr>
+            <td>{{ a.faculty.full_name }} <span class="text-muted small">({{ a.faculty.employee_id }})</span></td>
+            <td>{{ a.section.display_name }}</td>
+            <td>{{ a.subject.code }} &mdash; {{ a.subject.title }}</td>
+            <td>{{ a.academic_year.label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center text-muted">
+      <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+      No teaching assignments yet. Add one to allow faculty to record attendance.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

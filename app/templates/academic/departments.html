@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-building me-2"></i>Departments</h1>
+  <a href="{{ url_for('academic.add_department') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> Add Department
+  </a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    {% if depts %}
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Code</th><th>Name</th><th>Description</th></tr></thead>
+      <tbody>
+        {% for d in depts %}
+        <tr>
+          <td class="fw-semibold font-monospace">{{ d.code }}</td>
+          <td>{{ d.name }}</td>
+          <td class="text-muted small">{{ d.description or '—' }}</td>
+          <td>
+            <a href="{{ url_for('academic.edit_department', dept_id=d.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-4 text-center text-muted">No departments yet. Add one to get started.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

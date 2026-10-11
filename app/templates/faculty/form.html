@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('faculty.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1>{{ title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card">
+      <div class="card-header">Faculty Details</div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              {{ form.employee_id.label(class="form-label") }}
+              {{ form.employee_id(class="form-control" + (" is-invalid" if form.employee_id.errors else "")) }}
+              {% for e in form.employee_id.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.full_name.label(class="form-label") }}
+              {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else "")) }}
+              {% for e in form.full_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.department_id.label(class="form-label") }}
+              {{ form.department_id(class="form-select" + (" is-invalid" if form.department_id.errors else "")) }}
+              {% for e in form.department_id.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.designation.label(class="form-label") }}
+              {{ form.designation(class="form-control") }}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.email.label(class="form-label") }}
+              {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), type="email") }}
+              {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.phone.label(class="form-label") }}
+              {{ form.phone(class="form-control") }}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.qualification.label(class="form-label") }}
+              {{ form.qualification(class="form-control") }}
+            </div>
+            <div class="col-12 col-md-6">
+              {{ form.joining_date.label(class="form-label") }}
+              {{ form.joining_date(class="form-control", type="date") }}
+            </div>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('faculty.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

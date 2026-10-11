@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ member.full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('faculty.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1>{{ member.full_name }}</h1>
+  <span class="badge badge-{{ member.status }} ms-2">{{ member.status | title }}</span>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Employment Information</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted small">Employee ID</dt>
+          <dd class="col-7 fw-semibold font-monospace">{{ member.employee_id }}</dd>
+          <dt class="col-5 text-muted small">Department</dt>
+          <dd class="col-7">{{ member.department.name if member.department else '—' }}</dd>
+          <dt class="col-5 text-muted small">Designation</dt>
+          <dd class="col-7">{{ member.designation or '—' }}</dd>
+          <dt class="col-5 text-muted small">Qualification</dt>
+          <dd class="col-7">{{ member.qualification or '—' }}</dd>
+          <dt class="col-5 text-muted small">Joining Date</dt>
+          <dd class="col-7">{{ member.joining_date.strftime('%d %b %Y') if member.joining_date else '—' }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Teaching Assignments</div>
+      <div class="card-body p-0">
+        {% if assignments %}
+        <ul class="list-group list-group-flush">
+          {% for a in assignments %}
+          <li class="list-group-item small">
+            <span class="fw-semibold">{{ a.subject.code }}</span> &mdash; {{ a.subject.title }}<br>
+            <span class="text-muted">{{ a.section.display_name }}</span>
+            &nbsp;<span class="badge bg-secondary">{{ a.academic_year.label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="p-3 text-muted small">No teaching assignments yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if current_user.is_admin() %}
+<div class="mt-3 d-flex gap-2">
+  <a href="{{ url_for('faculty.edit', faculty_id=member.id) }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-pencil"></i> Edit
+  </a>
+  {% if member.status == 'active' %}
+  <form method="post" action="{{ url_for('faculty.archive', faculty_id=member.id) }}"
+        onsubmit="return confirm('Archive this faculty member?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-archive"></i> Archive
+    </button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block auth_content %}
+<div class="login-card card shadow-lg">
+  <div class="card-header">
+    <div class="login-logo text-white">
+      <i class="bi bi-mortarboard-fill me-2" style="color:#b8960c;"></i>
+      {{ institution_name }}
+    </div>
+    <div class="text-white-50 small mt-1">Student &amp; Faculty Management</div>
+  </div>
+  <div class="card-body p-4">
+    <h2 class="h5 mb-3" style="font-family:Georgia,serif; color:#1a2e4a;">Sign In to Your Account</h2>
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""),
+                         placeholder="Username or email address") }}
+        {% for e in form.username.errors %}
+          <div class="invalid-feedback">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-4">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""),
+                         placeholder="Password") }}
+        {% for e in form.password.errors %}
+          <div class="invalid-feedback">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      {{ form.submit(class="btn btn-primary w-100") }}
+    </form>
+  </div>
+  <div class="card-footer text-center text-muted small py-2">
+    Authorised users only &mdash; {{ institution_name }}
+  </div>
+</div>
+{% endblock %}

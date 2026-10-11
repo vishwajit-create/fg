@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Programs{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-mortarboard me-2"></i>Programs / Courses</h1>
+  <a href="{{ url_for('academic.add_program') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Program</a>
+</div>
+<div class="card"><div class="card-body p-0">
+{% if progs %}
+<table class="table table-hover mb-0">
+  <thead><tr><th>Code</th><th>Program Name</th><th>Department</th><th>Duration</th></tr></thead>
+  <tbody>
+  {% for p in progs %}
+  <tr>
+    <td class="fw-semibold font-monospace">{{ p.code }}</td>
+    <td>{{ p.name }}</td>
+    <td>{{ p.department.name if p.department else '—' }}</td>
+    <td>{{ p.duration_years }} yr{{ 's' if p.duration_years != 1 else '' }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="p-4 text-center text-muted">No programs yet.</div>{% endif %}
+</div></div>
+{% endblock %}

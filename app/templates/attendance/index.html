@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Attendance — Select Class{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-clipboard-check me-2"></i>Daily Attendance</h1>
+</div>
+
+<!-- Register selection -->
+<div class="card mb-4">
+  <div class="card-header">Open a Register</div>
+  <div class="card-body">
+    <form method="get" action="{{ url_for('attendance.open_register') }}" class="row g-3 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Teaching Assignment *</label>
+        <select name="assignment_id" class="form-select" required>
+          <option value="">-- Select --</option>
+          {% for a in assignments %}
+          <option value="{{ a.id }}">
+            {{ a.section.display_name }} &mdash; {{ a.subject.code }}
+            ({{ a.faculty.full_name }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Date *</label>
+        <input type="date" name="session_date" class="form-control"
+               value="{{ today }}" max="{{ today }}" required>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label">Period/Session</label>
+        <select name="session_label" class="form-select">
+          <option value="1">Period 1</option>
+          <option value="2">Period 2</option>
+          <option value="3">Period 3</option>
+          <option value="4">Period 4</option>
+          <option value="5">Period 5</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-folder2-open"></i> Open Register
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Recent registers -->
+<div class="card">
+  <div class="card-header">Recent Registers</div>
+  <div class="card-body p-0">
+    {% if recent %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Section</th>
+            <th>Subject</th>
+            <th>Period</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in recent %}
+          <tr>
+            <td>{{ s.session_date.strftime('%d %b %Y') }}</td>
+            <td>{{ s.section.display_name }}</td>
+            <td>{{ s.subject.code }}</td>
+            <td>{{ s.session_label }}</td>
+            <td><span class="badge badge-{{ s.status }}">{{ s.status | title }}</span></td>
+            <td>
+              <a href="{{ url_for('attendance.view', session_id=s.id) }}"
+                 class="btn btn-sm btn-outline-secondary">View</a>
+              {% if s.status == 'draft' %}
+              <a href="{{ url_for('attendance.mark', session_id=s.id) }}"
+                 class="btn btn-sm btn-outline-primary">Continue</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center text-muted">No registers yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Default today's date
+  var dateInput = document.querySelector('input[type=date][name=session_date]');
+  if (dateInput && !dateInput.value) {
+    dateInput.value = new Date().toISOString().slice(0, 10);
+  }
+</script>
+{% endblock %}

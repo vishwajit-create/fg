@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Faculty{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1><i class="bi bi-person-badge me-2"></i>Faculty Register</h1>
+  {% if current_user.is_admin() %}
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('faculty.add') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-person-plus-fill"></i> Add Faculty
+    </a>
+    <a href="{{ url_for('faculty.assignments') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-diagram-3"></i> Assignments
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Filters -->
+<form method="get" class="card card-body mb-4 py-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label class="form-label">Search</label>
+      <input type="text" name="q" class="form-control form-control-sm"
+             value="{{ q }}" placeholder="Name or employee ID&hellip;">
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Department</label>
+      <select name="dept_id" class="form-select form-select-sm">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.id }}" {% if dept_id|string == d.id|string %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="active"   {% if status == 'active'   %}selected{% endif %}>Active</option>
+        <option value="archived" {% if status == 'archived' %}selected{% endif %}>Archived</option>
+        <option value="all"      {% if status == 'all'      %}selected{% endif %}>All</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-primary btn-sm">Filter</button>
+      <a href="{{ url_for('faculty.index') }}" class="btn btn-outline-secondary btn-sm ms-1">Clear</a>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header">
+    Faculty Members
+    <span class="badge bg-secondary ms-1">{{ faculty_list.total }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if faculty_list.items %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Emp. ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in faculty_list.items %}
+          <tr>
+            <td class="fw-semibold font-monospace">{{ f.employee_id }}</td>
+            <td>{{ f.full_name }}</td>
+            <td>{{ f.department.name if f.department else '—' }}</td>
+            <td>{{ f.designation or '—' }}</td>
+            <td><span class="badge badge-{{ f.status }}">{{ f.status | title }}</span></td>
+            <td class="text-end">
+              <a href="{{ url_for('faculty.detail', faculty_id=f.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+              {% if current_user.is_admin() %}
+              <a href="{{ url_for('faculty.edit', faculty_id=f.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center text-muted">
+      <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+      No faculty members found.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

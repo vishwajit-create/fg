@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Subjects{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-book me-2"></i>Subjects</h1>
+  <a href="{{ url_for('academic.add_subject') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Subject</a>
+</div>
+<div class="card"><div class="card-body p-0">
+{% if subjects %}
+<table class="table table-hover mb-0">
+  <thead><tr><th>Code</th><th>Title</th><th>Program</th><th>Sem.</th><th>Credits</th></tr></thead>
+  <tbody>
+  {% for s in subjects %}
+  <tr>
+    <td class="fw-semibold font-monospace">{{ s.code }}</td>
+    <td>{{ s.title }}</td>
+    <td>{{ s.program.name if s.program else '—' }}</td>
+    <td>{{ s.semester or '—' }}</td>
+    <td>{{ s.credits }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="p-4 text-center text-muted">No subjects yet.</div>{% endif %}
+</div></div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Attendance Report{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-bar-chart-line me-2"></i>Attendance Report</h1>
+</div>
+
+<!-- Filter form -->
+<form method="get" class="card card-body mb-4 py-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-6 col-md-2">
+      <label class="form-label">From</label>
+      <input type="date" name="start" class="form-control form-control-sm" value="{{ start }}">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label">To</label>
+      <input type="date" name="end" class="form-control form-control-sm" value="{{ end }}">
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Section</label>
+      <select name="section_id" class="form-select form-select-sm">
+        <option value="">All Sections</option>
+        {% for s in sections %}
+        <option value="{{ s.id }}" {% if section_id == s.id %}selected{% endif %}>{{ s.display_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Subject</label>
+      <select name="subject_id" class="form-select form-select-sm">
+        <option value="">All Subjects</option>
+        {% for s in subjects %}
+        <option value="{{ s.id }}" {% if subject_id == s.id %}selected{% endif %}>{{ s.code }} &mdash; {{ s.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-primary btn-sm">Generate</button>
+    </div>
+    <div class="col-auto">
+      <a href="{{ url_for('reports.attendance_report', start=start, end=end,
+                          section_id=section_id or '', subject_id=subject_id or '', export='csv') }}"
+         class="btn btn-outline-success btn-sm">
+        <i class="bi bi-download"></i> Export CSV
+      </a>
+    </div>
+  </div>
+  <div class="mt-2 small text-muted">
+    Showing submitted registers from <strong>{{ start }}</strong> to <strong>{{ end }}</strong>.
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header">Results &mdash; {{ report_rows | length }} student(s)</div>
+  <div class="card-body p-0">
+    {% if report_rows %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Roll No.</th>
+            <th>Student Name</th>
+            <th class="text-center">Total Sessions</th>
+            <th class="text-center">Present</th>
+            <th class="text-center">Attendance %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in report_rows | sort(attribute='roll_number') %}
+          <tr>
+            <td class="font-monospace fw-semibold">{{ r.roll_number }}</td>
+            <td>{{ r.full_name }}</td>
+            <td class="text-center">{{ r.total_sessions }}</td>
+            <td class="text-center">{{ r.present_count }}</td>
+            <td class="text-center">
+              {% if r.percentage is not none %}
+                {% if r.percentage >= 75 %}
+                  <span class="badge badge-present">{{ r.percentage }}%</span>
+                {% elif r.percentage >= 60 %}
+                  <span class="badge badge-leave">{{ r.percentage }}%</span>
+                {% else %}
+                  <span class="badge badge-absent">{{ r.percentage }}%</span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">N/A</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center text-muted">
+      <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+      No submitted attendance records found for the selected filters and date range.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

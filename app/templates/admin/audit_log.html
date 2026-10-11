@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-journal-text me-2"></i>Audit Log</h1>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if logs.items %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>IP</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs.items %}
+          <tr>
+            <td class="small text-muted text-nowrap">
+              {{ log.created_at.strftime('%d %b %Y %H:%M:%S') }}
+            </td>
+            <td class="small">
+              {{ log.actor.username if log.actor else '—' }}
+            </td>
+            <td><span class="badge bg-secondary">{{ log.action }}</span></td>
+            <td class="small">
+              {% if log.entity_type %}{{ log.entity_type }}{% if log.entity_id %} #{{ log.entity_id }}{% endif %}{% endif %}
+            </td>
+            <td class="small font-monospace text-muted">{{ log.ip_address or '—' }}</td>
+            <td class="small text-muted">{{ log.change_summary or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if logs.pages > 1 %}
+    <div class="d-flex justify-content-center py-3">
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% if logs.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.audit_log', page=logs.prev_num) }}">&laquo;</a>
+          </li>
+          {% endif %}
+          {% for num in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if num %}
+            <li class="page-item {% if num == logs.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('admin.audit_log', page=num) }}">{{ num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            {% endif %}
+          {% endfor %}
+          {% if logs.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.audit_log', page=logs.next_num) }}">&raquo;</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="p-4 text-center text-muted">No audit log entries yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

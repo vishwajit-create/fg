@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1>{{ title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-header">Account Details</div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+
+          {% if form.username is defined %}
+          <div class="mb-3">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+            {% for e in form.username.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), type="email") }}
+            {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), type="password") }}
+            {% for e in form.password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.confirm_password.label(class="form-label") }}
+            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), type="password") }}
+            {% for e in form.confirm_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.faculty_id.label(class="form-label") }}
+            {{ form.faculty_id(class="form-select") }}
+          </div>
+          {% endif %}
+
+          <div class="mb-3">
+            {{ form.role_id.label(class="form-label") }}
+            {{ form.role_id(class="form-select") }}
+          </div>
+
+          {% if form.active is defined %}
+          <div class="mb-3 form-check">
+            {{ form.active(class="form-check-input") }}
+            {{ form.active.label(class="form-check-label") }}
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-2 mt-3">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
