@@ -47,4 +47,15 @@ def create_app(config_name=None):
     from app.context_processors import register_context_processors
     register_context_processors(app)
 
+    # Security headers
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        return response
+
     return app
+
+
