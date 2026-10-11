@@ -56,6 +56,46 @@ def create_app(config_name=None):
         response.headers['X-XSS-Protection'] = '1; mode=block'
         return response
 
+    # ProxyFix for reverse proxies (Render, Nginx, etc.)
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+
+    # Automatically ensure tables and default roles/admin exist on startup
+    with app.app_context():
+        try:
+            from app.models import Role, User, InstitutionSettings
+            db.create_all()
+            for r_name, desc in [
+                ('super_admin', 'Full system access'),
+                ('college_admin', 'College administrator / registrar'),
+                ('dept_head', 'Department head'),
+                ('faculty', 'Teaching faculty member'),
+                ('auditor', 'Read-only audit access')
+            ]:
+                if not Role.query.filter_by(name=r_name).first():
+                    db.session.add(Role(name=r_name, description=desc))
+            db.session.commit()
+
+            # Ensure default super admin exists
+            sa_role = Role.query.filter_by(name='super_admin').first()
+            if sa_role:
+                for uname in ['admin', 'superadmin']:
+                    if not User.query.filter_by(username=uname).first():
+                        u = User(username=uname, email=f'{uname}@college.edu', role_id=sa_role.id, active=True)
+                        u.set_password('Admin@123')
+                        db.session.add(u)
+                db.session.commit()
+
+            if not InstitutionSettings.query.first():
+                db.session.add(InstitutionSettings(
+                    institution_name=app.config.get('INSTITUTION_NAME', 'College Management System')
+                ))
+                db.session.commit()
+        except Exception as ex:
+            app.logger.warning(f'Auto-init DB skipped or failed: {ex}')
+
     return app
+
 
 
