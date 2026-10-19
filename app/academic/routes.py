@@ -294,14 +294,14 @@ def delete_academic_year(year_id):
 def delete_section(section_id):
     section = Section.query.get_or_404(section_id)
     if section.enrollments.count() > 0:
-        flash(f'Cannot delete section "{section.display_name}" because students are enrolled in it.', 'danger')
+        flash(f'Cannot delete section "{section.display_name}" because students are currently enrolled in it. Reassign or remove enrollments first.', 'danger')
         return redirect(url_for('academic.sections'))
-    if section.faculty_assignments.count() > 0:
-        flash(f'Cannot delete section "{section.display_name}" because faculty assignments exist for it.', 'danger')
-        return redirect(url_for('academic.sections'))
-    if section.attendance_sessions.count() > 0:
-        flash(f'Cannot delete section "{section.display_name}" because attendance records exist.', 'danger')
-        return redirect(url_for('academic.sections'))
+    
+    # Cascade delete faculty assignments and attendance sessions
+    for a in section.faculty_assignments.all():
+        db.session.delete(a)
+    for s in section.attendance_sessions.all():
+        db.session.delete(s)
     
     display_name = section.display_name
     log_action(current_user.id, 'delete', 'section', section.id, f'Deleted section {display_name}')
@@ -316,11 +316,10 @@ def delete_section(section_id):
 @super_admin_required
 def delete_subject(subject_id):
     subject = Subject.query.get_or_404(subject_id)
-    if subject.attendance_sessions.count() > 0:
-        flash(f'Cannot delete subject "{subject.code}" because attendance sessions are linked to it.', 'danger')
-        return redirect(url_for('academic.subjects'))
     
-    # Cascade delete any faculty assignments for this subject
+    # Cascade delete any attendance sessions and faculty assignments for this subject
+    for s in subject.attendance_sessions.all():
+        db.session.delete(s)
     for a in subject.faculty_assignments.all():
         db.session.delete(a)
     

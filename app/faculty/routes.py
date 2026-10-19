@@ -195,9 +195,6 @@ def add_assignment():
 @super_admin_required
 def delete(faculty_id):
     member = Faculty.query.get_or_404(faculty_id)
-    if member.attendance_sessions.count() > 0:
-        flash(f'Cannot delete faculty member "{member.full_name}" because attendance registers are logged under their name. You can Archive them instead.', 'danger')
-        return redirect(url_for('faculty.index'))
     
     # Remove any linked user account profile link
     if member.user_account:
@@ -207,10 +204,14 @@ def delete(faculty_id):
     for a in member.assignments.all():
         db.session.delete(a)
 
+    # Clean up any attendance sessions logged by this faculty (and their cascaded attendance records)
+    for session in member.attendance_sessions.all():
+        db.session.delete(session)
+
     emp_id = member.employee_id
     full_name = member.full_name
     log_action(current_user.id, 'delete', 'faculty', member.id,
-               f'Deleted faculty {emp_id} ({full_name})')
+               f'Deleted faculty {emp_id} ({full_name}) and associated sessions')
     db.session.delete(member)
     db.session.commit()
     flash(f'Faculty member "{full_name}" ({emp_id}) has been permanently deleted.', 'success')
