@@ -92,7 +92,7 @@ class CSFMSStandardTestCase(unittest.TestCase):
         db.session.rollback()
 
     def test_unique_attendance_session(self):
-        ay = AcademicYear(label='2025-26', start_date=date(2025, 1, 1), end_date=date(2025, 12, 31), active=True)
+        ay = AcademicYear(label='TEST-YR', start_date=date(2025, 1, 1), end_date=date(2025, 12, 31), active=False)
         dept = Department.query.first()
         prog = Program(code='PRG1', name='Program 1', department_id=dept.id)
         db.session.add_all([ay, prog])
