@@ -21,5 +21,9 @@ def admin_required(f):
     return roles_required('super_admin', 'college_admin')(f)
 
 
+def super_admin_required(f):
+    return roles_required('super_admin')(f)
+
+
 def faculty_or_admin_required(f):
     return roles_required('super_admin', 'college_admin', 'dept_head', 'faculty')(f)

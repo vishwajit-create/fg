@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.student import Student, Enrollment
 from app.models.academic import Program, Section
-from app.utils.decorators import admin_required
+from app.utils.decorators import admin_required, super_admin_required
 from app.utils.audit import log_action
 from app.students.forms import StudentForm
 from datetime import date
@@ -140,4 +140,27 @@ def archive(student_id):
                f'Archived student {student.roll_number}')
     db.session.commit()
     flash(f'Student {student.full_name} has been archived.', 'warning')
+    return redirect(url_for('students.index'))
+
+
+@students_bp.route('/<int:student_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete(student_id):
+    student = Student.query.get_or_404(student_id)
+    if student.attendance_records.count() > 0:
+        flash(f'Cannot delete student "{student.full_name}" because attendance records exist for them. You can Archive them instead.', 'danger')
+        return redirect(url_for('students.index'))
+    
+    # Remove enrollments
+    for e in student.enrollments.all():
+        db.session.delete(e)
+
+    roll = student.roll_number
+    name = student.full_name
+    log_action(current_user.id, 'delete', 'student', student.id,
+               f'Deleted student {roll} ({name})')
+    db.session.delete(student)
+    db.session.commit()
+    flash(f'Student "{name}" ({roll}) has been permanently deleted.', 'success')
     return redirect(url_for('students.index'))

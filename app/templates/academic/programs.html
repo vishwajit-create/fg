@@ -8,7 +8,7 @@
 <div class="card"><div class="card-body p-0">
 {% if progs %}
 <table class="table table-hover mb-0">
-  <thead><tr><th>Code</th><th>Program Name</th><th>Department</th><th>Duration</th></tr></thead>
+  <thead><tr><th>Code</th><th>Program Name</th><th>Department</th><th>Duration</th><th class="text-end">Actions</th></tr></thead>
   <tbody>
   {% for p in progs %}
   <tr>
@@ -16,6 +16,19 @@
     <td>{{ p.name }}</td>
     <td>{{ p.department.name if p.department else '—' }}</td>
     <td>{{ p.duration_years }} yr{{ 's' if p.duration_years != 1 else '' }}</td>
+    <td class="text-end">
+      {% if current_user.is_super_admin() %}
+      <form method="post" action="{{ url_for('academic.delete_program', prog_id=p.id) }}" class="d-inline"
+            onsubmit="return confirm('Are you sure you want to permanently delete program {{ p.code }}?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sm btn-outline-danger">
+          <i class="fa fa-trash"></i> Delete
+        </button>
+      </form>
+      {% else %}
+      <span class="text-muted small">—</span>
+      {% endif %}
+    </td>
   </tr>
   {% endfor %}
   </tbody>

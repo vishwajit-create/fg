@@ -20,6 +20,7 @@
             <th>Section</th>
             <th>Subject</th>
             <th>Academic Year</th>
+            <th class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -29,6 +30,19 @@
             <td>{{ a.section.display_name }}</td>
             <td>{{ a.subject.code }} &mdash; {{ a.subject.title }}</td>
             <td>{{ a.academic_year.label }}</td>
+            <td class="text-end">
+              {% if current_user.is_super_admin() %}
+              <form method="post" action="{{ url_for('faculty.delete_assignment', assignment_id=a.id) }}" class="d-inline"
+                    onsubmit="return confirm('Delete this teaching assignment?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </form>
+              {% else %}
+              <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>

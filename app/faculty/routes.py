@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.faculty import Faculty, FacultyAssignment
 from app.models.academic import Department, Section, Subject, AcademicYear
-from app.utils.decorators import admin_required
+from app.utils.decorators import admin_required, super_admin_required
 from app.utils.audit import log_action
 from app.faculty.forms import FacultyForm, AssignmentForm
 
@@ -188,3 +188,45 @@ def add_assignment():
             return redirect(url_for('faculty.assignments'))
 
     return render_template('faculty/assignment_form.html', form=form, title='Add Teaching Assignment')
+
+
+@faculty_bp.route('/<int:faculty_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete(faculty_id):
+    member = Faculty.query.get_or_404(faculty_id)
+    if member.attendance_sessions.count() > 0:
+        flash(f'Cannot delete faculty member "{member.full_name}" because attendance registers are logged under their name. You can Archive them instead.', 'danger')
+        return redirect(url_for('faculty.index'))
+    
+    # Remove any linked user account profile link
+    if member.user_account:
+        member.user_account.faculty_id = None
+
+    # Remove any faculty assignments
+    for a in member.assignments.all():
+        db.session.delete(a)
+
+    emp_id = member.employee_id
+    full_name = member.full_name
+    log_action(current_user.id, 'delete', 'faculty', member.id,
+               f'Deleted faculty {emp_id} ({full_name})')
+    db.session.delete(member)
+    db.session.commit()
+    flash(f'Faculty member "{full_name}" ({emp_id}) has been permanently deleted.', 'success')
+    return redirect(url_for('faculty.index'))
+
+
+@faculty_bp.route('/assignments/<int:assignment_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete_assignment(assignment_id):
+    assignment = FacultyAssignment.query.get_or_404(assignment_id)
+    faculty_name = assignment.faculty.full_name if assignment.faculty else 'Unknown'
+    subj_code = assignment.subject.code if assignment.subject else 'Unknown'
+    log_action(current_user.id, 'delete', 'faculty_assignment', assignment.id,
+               f'Deleted assignment {faculty_name} -> {subj_code}')
+    db.session.delete(assignment)
+    db.session.commit()
+    flash(f'Teaching assignment for {faculty_name} ({subj_code}) deleted.', 'success')
+    return redirect(url_for('faculty.assignments'))

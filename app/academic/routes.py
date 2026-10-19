@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.academic import Department, Program, AcademicYear, Section, Subject
-from app.utils.decorators import admin_required
+from app.utils.decorators import admin_required, super_admin_required
 from app.utils.audit import log_action
 from app.academic.forms import (DepartmentForm, ProgramForm, AcademicYearForm,
                                   SectionForm, SubjectForm)
@@ -219,3 +219,115 @@ def add_subject():
             flash(f'Subject "{subj.title}" created.', 'success')
             return redirect(url_for('academic.subjects'))
     return render_template('academic/subject_form.html', form=form, title='Add Subject')
+
+
+# ---- Super Admin Delete Routes ----
+
+@academic_bp.route('/departments/<int:dept_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete_department(dept_id):
+    dept = Department.query.get_or_404(dept_id)
+    if dept.programs.count() > 0:
+        flash(f'Cannot delete department "{dept.name}" because it still has associated programs. Please delete or reassign them first.', 'danger')
+        return redirect(url_for('academic.departments'))
+    if dept.faculty_members.count() > 0:
+        flash(f'Cannot delete department "{dept.name}" because it still has associated faculty members.', 'danger')
+        return redirect(url_for('academic.departments'))
+    
+    code = dept.code
+    name = dept.name
+    log_action(current_user.id, 'delete', 'department', dept.id, f'Deleted department {code} ({name})')
+    db.session.delete(dept)
+    db.session.commit()
+    flash(f'Department "{name}" ({code}) has been deleted.', 'success')
+    return redirect(url_for('academic.departments'))
+
+
+@academic_bp.route('/programs/<int:prog_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete_program(prog_id):
+    prog = Program.query.get_or_404(prog_id)
+    if prog.sections.count() > 0:
+        flash(f'Cannot delete program "{prog.name}" because it has associated sections.', 'danger')
+        return redirect(url_for('academic.programs'))
+    if prog.subjects.count() > 0:
+        flash(f'Cannot delete program "{prog.name}" because it has associated subjects.', 'danger')
+        return redirect(url_for('academic.programs'))
+    if prog.students.count() > 0:
+        flash(f'Cannot delete program "{prog.name}" because it has enrolled students.', 'danger')
+        return redirect(url_for('academic.programs'))
+    
+    code = prog.code
+    name = prog.name
+    log_action(current_user.id, 'delete', 'program', prog.id, f'Deleted program {code} ({name})')
+    db.session.delete(prog)
+    db.session.commit()
+    flash(f'Program "{name}" ({code}) has been deleted.', 'success')
+    return redirect(url_for('academic.programs'))
+
+
+@academic_bp.route('/years/<int:year_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete_academic_year(year_id):
+    year = AcademicYear.query.get_or_404(year_id)
+    if year.sections.count() > 0:
+        flash(f'Cannot delete academic year "{year.label}" because sections are mapped to it.', 'danger')
+        return redirect(url_for('academic.academic_years'))
+    if year.faculty_assignments.count() > 0:
+        flash(f'Cannot delete academic year "{year.label}" because faculty assignments exist for it.', 'danger')
+        return redirect(url_for('academic.academic_years'))
+    
+    label = year.label
+    log_action(current_user.id, 'delete', 'academic_year', year.id, f'Deleted academic year {label}')
+    db.session.delete(year)
+    db.session.commit()
+    flash(f'Academic year "{label}" has been deleted.', 'success')
+    return redirect(url_for('academic.academic_years'))
+
+
+@academic_bp.route('/sections/<int:section_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete_section(section_id):
+    section = Section.query.get_or_404(section_id)
+    if section.enrollments.count() > 0:
+        flash(f'Cannot delete section "{section.display_name}" because students are enrolled in it.', 'danger')
+        return redirect(url_for('academic.sections'))
+    if section.faculty_assignments.count() > 0:
+        flash(f'Cannot delete section "{section.display_name}" because faculty assignments exist for it.', 'danger')
+        return redirect(url_for('academic.sections'))
+    if section.attendance_sessions.count() > 0:
+        flash(f'Cannot delete section "{section.display_name}" because attendance records exist.', 'danger')
+        return redirect(url_for('academic.sections'))
+    
+    display_name = section.display_name
+    log_action(current_user.id, 'delete', 'section', section.id, f'Deleted section {display_name}')
+    db.session.delete(section)
+    db.session.commit()
+    flash(f'Section "{display_name}" has been deleted.', 'success')
+    return redirect(url_for('academic.sections'))
+
+
+@academic_bp.route('/subjects/<int:subject_id>/delete', methods=['POST'])
+@login_required
+@super_admin_required
+def delete_subject(subject_id):
+    subject = Subject.query.get_or_404(subject_id)
+    if subject.attendance_sessions.count() > 0:
+        flash(f'Cannot delete subject "{subject.code}" because attendance sessions are linked to it.', 'danger')
+        return redirect(url_for('academic.subjects'))
+    
+    # Cascade delete any faculty assignments for this subject
+    for a in subject.faculty_assignments.all():
+        db.session.delete(a)
+    
+    code = subject.code
+    title = subject.title
+    log_action(current_user.id, 'delete', 'subject', subject.id, f'Deleted subject {code} ({title})')
+    db.session.delete(subject)
+    db.session.commit()
+    flash(f'Subject "{code} - {title}" has been deleted.', 'success')
+    return redirect(url_for('academic.subjects'))

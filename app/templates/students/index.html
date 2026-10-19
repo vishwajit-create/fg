@@ -82,6 +82,15 @@
                       onclick="confirmArchive('{{ url_for('students.archive', student_id=s.id) }}',
                                '{{ s.full_name }}')">Archive</button>
               {% endif %}
+              {% if current_user.is_super_admin() %}
+              <form method="post" action="{{ url_for('students.delete', student_id=s.id) }}" class="d-inline"
+                    onsubmit="return confirm('Permanently delete student {{ s.full_name }}?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </form>
+              {% endif %}
               {% endif %}
             </td>
           </tr>

@@ -8,7 +8,7 @@
 <div class="card"><div class="card-body p-0">
 {% if years %}
 <table class="table table-hover mb-0">
-  <thead><tr><th>Label</th><th>Start</th><th>End</th><th>Current</th></tr></thead>
+  <thead><tr><th>Label</th><th>Start</th><th>End</th><th>Current</th><th class="text-end">Actions</th></tr></thead>
   <tbody>
   {% for y in years %}
   <tr>
@@ -16,6 +16,19 @@
     <td>{{ y.start_date }}</td>
     <td>{{ y.end_date }}</td>
     <td>{% if y.active %}<span class="badge bg-success">Yes</span>{% else %}—{% endif %}</td>
+    <td class="text-end">
+      {% if current_user.is_super_admin() %}
+      <form method="post" action="{{ url_for('academic.delete_academic_year', year_id=y.id) }}" class="d-inline"
+            onsubmit="return confirm('Are you sure you want to permanently delete academic year {{ y.label }}?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sm btn-outline-danger">
+          <i class="fa fa-trash"></i> Delete
+        </button>
+      </form>
+      {% else %}
+      <span class="text-muted small">—</span>
+      {% endif %}
+    </td>
   </tr>
   {% endfor %}
   </tbody>

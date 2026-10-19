@@ -62,8 +62,17 @@
   <form method="post" action="{{ url_for('students.archive', student_id=student.id) }}"
         onsubmit="return confirm('Archive this student? Historical attendance will be preserved.');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline-warning btn-sm">
+      <i class="fa fa-archive"></i> Archive
+    </button>
+  </form>
+  {% endif %}
+  {% if current_user.is_super_admin() %}
+  <form method="post" action="{{ url_for('students.delete', student_id=student.id) }}"
+        onsubmit="return confirm('Permanently delete student {{ student.full_name }}? This cannot be undone.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-outline-danger btn-sm">
-      <i class="bi bi-archive"></i> Archive
+      <i class="fa fa-trash"></i> Delete
     </button>
   </form>
   {% endif %}

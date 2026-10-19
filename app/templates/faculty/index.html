@@ -80,6 +80,15 @@
               {% if current_user.is_admin() %}
               <a href="{{ url_for('faculty.edit', faculty_id=f.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
               {% endif %}
+              {% if current_user.is_super_admin() %}
+              <form method="post" action="{{ url_for('faculty.delete', faculty_id=f.id) }}" class="d-inline"
+                    onsubmit="return confirm('Permanently delete faculty member {{ f.full_name }}?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </form>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
