@@ -109,16 +109,32 @@ def mark(session_id):
         flash('This register is locked. Contact an administrator to make corrections.', 'warning')
         return redirect(url_for('attendance.view', session_id=session_id))
 
-    # Get enrolled students
-    enrollments = (
-        Enrollment.query
-        .filter_by(section_id=session.section_id, status='active')
-        .join(Student)
-        .filter(Student.status == 'active')
-        .order_by(Student.roll_number)
-        .all()
-    )
-    students = [e.student for e in enrollments]
+    # Fetch students eligible to attend:
+    # 1. Directly enrolled in this section
+    # 2. Or registered under the same program or department (e.g. CSE branch students can attend any CSE class/program)
+    enrolled_student_ids = [
+        e.student_id for e in Enrollment.query.filter_by(section_id=session.section_id, status='active').all()
+    ]
+    
+    # Get program and department IDs for the current class/section
+    prog_id = session.section.program_id if session.section else None
+    dept_id = session.section.program.department_id if session.section and session.section.program else None
+
+    # Query students: directly enrolled, or in same program, or in same branch/department
+    candidate_query = Student.query.filter(Student.status == 'active')
+    
+    conditions = []
+    if enrolled_student_ids:
+        conditions.append(Student.id.in_(enrolled_student_ids))
+    if prog_id:
+        conditions.append(Student.program_id == prog_id)
+    if dept_id:
+        conditions.append(Student.program.has(department_id=dept_id))
+    
+    if conditions:
+        students = candidate_query.filter(db.or_(*conditions)).order_by(Student.roll_number).all()
+    else:
+        students = candidate_query.order_by(Student.roll_number).all()
 
     # Fetch existing records
     existing = {r.student_id: r for r in session.records.all()}

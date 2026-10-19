@@ -34,6 +34,7 @@
             <th>#</th>
             <th>Roll No.</th>
             <th>Name</th>
+            <th>Branch / Program</th>
             <th>Status</th>
             <th>Marked At</th>
           </tr>
@@ -44,6 +45,12 @@
             <td class="text-muted">{{ loop.index }}</td>
             <td class="font-monospace fw-semibold">{{ rec.student.roll_number }}</td>
             <td>{{ rec.student.full_name }}</td>
+            <td>
+              <span class="badge bg-secondary">{{ rec.student.program.code if rec.student.program else '—' }}</span>
+              {% if rec.student.section %}
+              <span class="text-muted small ms-1">({{ rec.student.section.section_name }})</span>
+              {% endif %}
+            </td>
             <td><span class="badge badge-{{ rec.status }}">{{ rec.status | title }}</span>
               {% if rec.correction_note %}
               <i class="bi bi-exclamation-circle text-warning" title="{{ rec.correction_note }}"></i>

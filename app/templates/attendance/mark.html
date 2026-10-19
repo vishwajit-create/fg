@@ -50,6 +50,7 @@
               <th style="width:60px;">#</th>
               <th>Roll No.</th>
               <th>Student Name</th>
+              <th>Branch / Program</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -60,6 +61,12 @@
               <td class="text-muted">{{ loop.index }}</td>
               <td class="font-monospace fw-semibold">{{ student.roll_number }}</td>
               <td>{{ student.full_name }}</td>
+              <td>
+                <span class="badge bg-secondary">{{ student.program.code if student.program else '—' }}</span>
+                {% if student.section %}
+                <span class="text-muted small ms-1">({{ student.section.section_name }})</span>
+                {% endif %}
+              </td>
               <td>
                 <div class="btn-group att-status-btns" role="group">
                   <input type="radio" class="btn-check" name="status_{{ student.id }}"
