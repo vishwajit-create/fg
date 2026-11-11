@@ -13,3 +13,6 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+render_backup_extracted/
+database_backup/
