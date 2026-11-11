@@ -1,11 +1,8 @@
 import sys
 import os
 import psycopg2
-from app import create_app
-from app.extensions import db
 
 def setup_and_migrate(supabase_uri):
-    # Ensure URI starts with postgresql://
     if supabase_uri.startswith("postgres://"):
         supabase_uri = supabase_uri.replace("postgres://", "postgresql://", 1)
         
@@ -13,9 +10,14 @@ def setup_and_migrate(supabase_uri):
     print("CSFMS -> Supabase Migration Tool")
     print("=" * 60)
     
-    print("\n1. Initializing tables on Supabase...")
     os.environ["DATABASE_URL"] = supabase_uri
+    
+    from app import create_app
+    from app.extensions import db
+    
+    print("\n1. Initializing tables on Supabase...")
     app = create_app("production")
+    app.config["SQLALCHEMY_DATABASE_URI"] = supabase_uri
     
     with app.app_context():
         db.create_all()
@@ -56,20 +58,17 @@ def setup_and_migrate(supabase_uri):
             cur.execute(f'SELECT COUNT(*) FROM "public"."{t}";')
             cnt = cur.fetchone()[0]
             print(f"   * {t:22}: {cnt} rows")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   * {t:22}: error ({e})")
     cur.close()
     conn.close()
 
     print("\n" + "=" * 60)
     print("Migration completed successfully!")
-    print("Now update DATABASE_URL in your Render dashboard environment variables.")
     print("=" * 60)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python import_to_supabase.py <SUPABASE_DATABASE_URL>")
-        print("Example:")
-        print("  python import_to_supabase.py \"postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres\"")
         sys.exit(1)
     setup_and_migrate(sys.argv[1])

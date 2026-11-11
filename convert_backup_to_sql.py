@@ -48,8 +48,13 @@ with open(output_sql_path, "w", encoding="utf-8") as out:
     out.write("-- Source: Render PostgreSQL Backup (2026-11-10T20:25Z)\n")
     out.write("-- ============================================================\n\n")
     out.write("BEGIN;\n\n")
-    out.write("-- Disable triggers temporarily during data import\n")
+    out.write("-- Disable triggers & foreign keys temporarily during data restore\n")
     out.write("SET session_replication_role = 'replica';\n\n")
+
+    # Truncate all tables first so initial seed data doesn't clash with backup data
+    table_list_str = ", ".join([f'"public"."{t}"' for t in ordered_tables])
+    out.write(f"-- Clear existing seed data\n")
+    out.write(f"TRUNCATE TABLE {table_list_str} CASCADE;\n\n")
 
     for t_name in ordered_tables:
         if t_name not in tables_info:
@@ -88,13 +93,12 @@ with open(output_sql_path, "w", encoding="utf-8") as out:
                         val_strs.append("TRUE")
                     elif v == "f":
                         val_strs.append("FALSE")
-                    # If it's an id or foreign key id or duration_years/credits/semester
                     elif col_name in ("id", "department_id", "program_id", "academic_year_id", "section_id", "subject_id", "faculty_id", "role_id", "student_id", "actor_user_id", "entity_id", "session_id", "marked_by", "duration_years", "semester", "credits", "attendance_edit_window_hours") and v.isdigit():
                         val_strs.append(v)
                     else:
                         escaped = v.replace("'", "''")
                         val_strs.append(f"'{escaped}'")
-                out.write(f'INSERT INTO "public"."{t_name}" ({col_list_str}) VALUES ({", ".join(val_strs)}) ON CONFLICT ("id") DO UPDATE SET "id" = EXCLUDED."id";\n')
+                out.write(f'INSERT INTO "public"."{t_name}" ({col_list_str}) VALUES ({", ".join(val_strs)});\n')
             
             # Reset sequence safely
             out.write(f"SELECT setval(pg_get_serial_sequence('\"public\".\"{t_name}\"', 'id'), COALESCE((SELECT MAX(id) FROM \"public\".\"{t_name}\"), 1), true);\n")
