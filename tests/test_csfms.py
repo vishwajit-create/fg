@@ -121,6 +121,92 @@ class CSFMSStandardTestCase(unittest.TestCase):
         resp = self.client.get('/admin/users')
         self.assertEqual(resp.status_code, 403)
 
+    def test_batch_provision_and_mandatory_profile_setup(self):
+        # Create an unlinked faculty member
+        dept = Department.query.first()
+        fac2 = Faculty(employee_id='FAC900', full_name='Lab Assistant Test', department_id=dept.id, status='active')
+        db.session.add(fac2)
+        db.session.commit()
+
+        # Login as super_admin and run batch provisioning
+        self.client.post('/auth/login', data={'username': 'testadmin', 'password': 'AdminPass123'}, follow_redirects=True)
+        resp = self.client.post('/admin/users/provision-faculty', follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'fac900', resp.data)
+
+        provisioned_user = User.query.filter_by(username='fac900').first()
+        self.assertIsNotNone(provisioned_user)
+        self.assertTrue(provisioned_user.must_change_password)
+        self.assertTrue(provisioned_user.has_pending_email())
+
+        # Switch to provisioned user
+        self.client.get('/auth/logout', follow_redirects=True)
+        provisioned_user.set_password('TempPass@12')
+        db.session.commit()
+
+        login_resp = self.client.post('/auth/login', data={'username': 'fac900', 'password': 'TempPass@12'}, follow_redirects=False)
+        self.assertEqual(login_resp.status_code, 302)
+        self.assertIn('/auth/profile', login_resp.headers['Location'])
+
+        # Guard should redirect /dashboard back to /auth/profile until setup complete
+        dash_resp = self.client.get('/dashboard', follow_redirects=False)
+        self.assertEqual(dash_resp.status_code, 302)
+        self.assertIn('/auth/profile', dash_resp.headers['Location'])
+
+        # Complete profile with real email and new password
+        prof_resp = self.client.post('/auth/profile', data={
+            'email': 'lab.assistant@college.edu',
+            'current_password': 'TempPass@12',
+            'new_password': 'NewSecurePass@99',
+            'confirm_password': 'NewSecurePass@99',
+        }, follow_redirects=True)
+        self.assertEqual(prof_resp.status_code, 200)
+        self.assertIn(b'Sign Out', prof_resp.data)
+
+        db.session.refresh(provisioned_user)
+        self.assertFalse(provisioned_user.must_change_password)
+        self.assertEqual(provisioned_user.email, 'lab.assistant@college.edu')
+        self.assertEqual(fac2.email, 'lab.assistant@college.edu')
+
+    def test_forgot_and_reset_password_via_otp(self):
+        from unittest.mock import patch
+        captured = {}
+
+        def fake_send_otp(to_email, username, otp_code):
+            captured['email'] = to_email
+            captured['otp'] = otp_code
+            return True, None
+
+        with patch('app.auth.routes.send_otp_email', side_effect=fake_send_otp):
+            resp = self.client.post('/auth/forgot-password', data={'identifier': 'testfaculty'}, follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(captured['email'], 'testfaculty@college.edu')
+            self.assertEqual(len(captured['otp']), 6)
+
+        # Wrong OTP increments attempts
+        bad_resp = self.client.post('/auth/reset-password', data={
+            'identifier': 'testfaculty',
+            'otp': '000000',
+            'new_password': 'ResetPass@123',
+            'confirm_password': 'ResetPass@123',
+        }, follow_redirects=True)
+        self.assertIn(b'Invalid OTP code', bad_resp.data)
+
+        # Valid OTP resets password
+        ok_resp = self.client.post('/auth/reset-password', data={
+            'identifier': 'testfaculty',
+            'otp': captured['otp'],
+            'new_password': 'ResetPass@123',
+            'confirm_password': 'ResetPass@123',
+        }, follow_redirects=True)
+        self.assertEqual(ok_resp.status_code, 200)
+        self.assertIn(b'Sign In', ok_resp.data)
+
+        # Verify login works with new password
+        login_resp = self.client.post('/auth/login', data={'username': 'testfaculty', 'password': 'ResetPass@123'}, follow_redirects=True)
+        self.assertEqual(login_resp.status_code, 200)
+        self.assertIn(b'Sign Out', login_resp.data)
+
 
 if __name__ == '__main__':
     unittest.main()

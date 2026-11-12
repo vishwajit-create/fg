@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Provisioned Faculty Credentials{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1><i class="fa fa-key me-2"></i>Provisioned Faculty &amp; Staff Credentials</h1>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+      <i class="fa fa-print me-1"></i> Print Slips
+    </button>
+    <a href="{{ url_for('admin.users') }}" class="btn btn-primary btn-sm">
+      <i class="fa fa-arrow-left me-1"></i> Back to Users
+    </a>
+  </div>
+</div>
+
+<div class="alert alert-warning">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <strong>One-Time Confidential View:</strong> Temporary passwords are shown only once. Distribute each credential privately (e.g., sealed slip or 1-on-1 message). Every user will be required to add their real email and set a new personal password on first sign-in.
+</div>
+
+<div class="card">
+  <div class="card-header">Generated Accounts ({{ provisioned | length }})</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Emp. ID</th>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Username</th>
+            <th>Temporary Password</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in provisioned %}
+          <tr>
+            <td class="font-monospace fw-semibold">{{ item.employee_id }}</td>
+            <td>{{ item.full_name }}</td>
+            <td>{{ item.designation }}</td>
+            <td class="font-monospace fw-bold text-primary">{{ item.username }}</td>
+            <td class="font-monospace fw-bold text-danger">{{ item.temp_password }}</td>
+            <td><span class="badge bg-warning text-dark">Must Setup Email &amp; Password</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

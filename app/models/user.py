@@ -26,6 +26,10 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+    must_change_password = db.Column(db.Boolean, default=False, nullable=False)
+    otp_code_hash = db.Column(db.String(256), nullable=True)
+    otp_expires_at = db.Column(db.DateTime, nullable=True)
+    otp_attempts = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     last_login_at = db.Column(db.DateTime)
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id'), nullable=True)
@@ -58,6 +62,12 @@ class User(UserMixin, db.Model):
     @property
     def is_active(self):
         return self.active
+
+    def has_pending_email(self):
+        return not self.email or self.email.lower().endswith('@pending.local')
+
+    def needs_profile_setup(self):
+        return bool(self.must_change_password or self.has_pending_email())
 
     def __repr__(self):
         return f'<User {self.username}>'

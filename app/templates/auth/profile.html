@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}My Profile &amp; Security{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <h1><i class="fa fa-shield me-2"></i>My Profile &amp; Security</h1>
+</div>
+
+{% if current_user.needs_profile_setup() %}
+<div class="alert alert-warning">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <strong>Action Required:</strong> Please add your real email address (used for password recovery OTP) and set a new personal password before using the system.
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-header">Account &amp; Password Settings</div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+            <div class="form-text">Your username is assigned by the institution.</div>
+          </div>
+
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }} <span class="text-danger">*</span>
+            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""),
+                          placeholder="your.email@college.edu") }}
+            {% for e in form.email.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+            <div class="form-text">Mandatory — used to send 6-digit OTP codes if you ever forget your password.</div>
+          </div>
+
+          <hr class="my-4">
+          <h6 class="text-muted mb-3">
+            {% if current_user.must_change_password %}
+              Set New Personal Password <span class="text-danger">(Required)</span>
+            {% else %}
+              Change Password <span class="small fw-normal">(leave blank to keep current password)</span>
+            {% endif %}
+          </h6>
+
+          <div class="mb-3">
+            {{ form.current_password.label(class="form-label") }}
+            {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else ""),
+                                     placeholder="Enter your current / temporary password") }}
+            {% for e in form.current_password.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.new_password.label(class="form-label") }}
+            {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else ""),
+                                 placeholder="Minimum 6 characters") }}
+            {% for e in form.new_password.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-4">
+            {{ form.confirm_password.label(class="form-label") }}
+            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""),
+                                     placeholder="Re-enter new password") }}
+            {% for e in form.confirm_password.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+          </div>
+
+          {{ form.submit(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -2,11 +2,20 @@
 {% block title %}User Accounts{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex align-items-center justify-content-between">
-  <h1><i class="bi bi-person-lock me-2"></i>User Accounts</h1>
-  <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-lg"></i> Add User
-  </a>
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1><i class="fa fa-lock me-2"></i>User Accounts</h1>
+  <div class="d-flex gap-2">
+    <form method="post" action="{{ url_for('admin.provision_faculty') }}"
+          onsubmit="return confirm('Generate user accounts with temporary passwords for all active teachers and lab assistants who do not have one yet?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-primary btn-sm">
+        <i class="fa fa-magic me-1"></i> Auto-Provision Faculty Accounts
+      </button>
+    </form>
+    <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary btn-sm">
+      <i class="fa fa-plus me-1"></i> Add User
+    </a>
+  </div>
 </div>
 
 <div class="card">

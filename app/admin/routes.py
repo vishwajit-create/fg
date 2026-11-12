@@ -1,3 +1,4 @@
+import secrets
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.extensions import db
@@ -76,6 +77,100 @@ def edit_user(user_id):
         return redirect(url_for('admin.users'))
 
     return render_template('admin/user_form.html', form=form, title='Edit User', user=user)
+
+
+def _generate_temp_password():
+    """Generate a readable, cryptographically random 10-char temporary password."""
+    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    digits = '23456789'
+    body = ''.join(secrets.choice(chars) for _ in range(7))
+    suffix = ''.join(secrets.choice(digits) for _ in range(2))
+    return f'{body}@{suffix}'
+
+
+def provision_unlinked_faculty(actor_user_id=None):
+    """Create user accounts for all active faculty/staff without an existing account.
+
+    Returns a list of dicts containing generated credentials (plaintext temp_password
+    is only available at creation time).
+    """
+    faculty_role = Role.query.filter_by(name='faculty').first()
+    if not faculty_role:
+        return []
+
+    linked_faculty_ids = {
+        u.faculty_id for u in User.query.filter(User.faculty_id.isnot(None)).all()
+    }
+    unlinked = (
+        Faculty.query
+        .filter_by(status='active')
+        .order_by(Faculty.employee_id)
+        .all()
+    )
+
+    provisioned = []
+    for member in unlinked:
+        if member.id in linked_faculty_ids:
+            continue
+
+        base_username = ''.join(c for c in member.employee_id.strip().lower() if c.isalnum() or c in '._-')
+        if not base_username:
+            base_username = f'fac{member.id}'
+
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f'{base_username}_{counter}'
+            counter += 1
+
+        email = member.email.strip().lower() if member.email else f'{username}@pending.local'
+        if User.query.filter(db.func.lower(User.email) == email).first():
+            email = f'{username}@pending.local'
+
+        temp_password = _generate_temp_password()
+        user = User(
+            username=username,
+            email=email,
+            role_id=faculty_role.id,
+            faculty_id=member.id,
+            active=True,
+            must_change_password=True,
+        )
+        user.set_password(temp_password)
+        db.session.add(user)
+        provisioned.append({
+            'employee_id': member.employee_id,
+            'full_name': member.full_name,
+            'designation': member.designation or 'Staff',
+            'username': username,
+            'temp_password': temp_password,
+            'email': email,
+        })
+
+    if provisioned:
+        db.session.flush()
+        log_action(
+            actor_user_id,
+            'batch_provision_faculty',
+            'user',
+            None,
+            f'Provisioned {len(provisioned)} faculty/staff user account(s)',
+        )
+        db.session.commit()
+
+    return provisioned
+
+
+@admin_bp.route('/users/provision-faculty', methods=['POST'])
+@login_required
+@admin_required
+def provision_faculty():
+    provisioned = provision_unlinked_faculty(actor_user_id=current_user.id)
+    if not provisioned:
+        flash('All active teachers and lab assistants already have user accounts.', 'info')
+        return redirect(url_for('admin.users'))
+    flash(f'Created {len(provisioned)} faculty/staff account(s). Save these credentials securely.', 'success')
+    return render_template('admin/provision_result.html', provisioned=provisioned)
 
 
 @admin_bp.route('/audit')

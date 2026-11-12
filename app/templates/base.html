@@ -23,7 +23,10 @@
   </button>
   <span class="navbar-brand mb-0 fw-semibold">{{ institution_name }}</span>
   <div class="d-flex align-items-center gap-2">
-    <span class="text-white-50 small d-none d-md-inline">{{ current_user.username }}</span>
+    <a href="{{ url_for('auth.profile') }}" class="btn btn-sm btn-outline-light" title="Profile &amp; Password">
+      <i class="fa fa-user-circle"></i>
+      <span class="d-none d-md-inline ms-1">{{ current_user.username }}</span>
+    </a>
     <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light">
       <i class="fa fa-sign-out"></i> Sign Out
     </a>
