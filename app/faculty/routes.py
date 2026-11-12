@@ -197,8 +197,8 @@ def delete(faculty_id):
     member = Faculty.query.get_or_404(faculty_id)
     
     # Remove any linked user account profile link
-    if member.user_account:
-        member.user_account.faculty_id = None
+    from app.models.user import User
+    User.query.filter_by(faculty_id=member.id).update({'faculty_id': None})
 
     # Remove any faculty assignments
     for a in member.assignments.all():

@@ -228,19 +228,49 @@ def add_subject():
 @super_admin_required
 def delete_department(dept_id):
     dept = Department.query.get_or_404(dept_id)
-    if dept.programs.count() > 0:
-        flash(f'Cannot delete department "{dept.name}" because it still has associated programs. Please delete or reassign them first.', 'danger')
-        return redirect(url_for('academic.departments'))
-    if dept.faculty_members.count() > 0:
-        flash(f'Cannot delete department "{dept.name}" because it still has associated faculty members.', 'danger')
-        return redirect(url_for('academic.departments'))
+    
+    # Cascade clean faculty members in this department
+    for member in dept.faculty_members.all():
+        User.query.filter_by(faculty_id=member.id).update({'faculty_id': None})
+        for a in member.assignments.all():
+            db.session.delete(a)
+        for s in member.attendance_sessions.all():
+            db.session.delete(s)
+        db.session.delete(member)
+
+    # Cascade clean programs under this department
+    for prog in dept.programs.all():
+        for sec in prog.sections.all():
+            Student.query.filter_by(section_id=sec.id).update({'section_id': None})
+            for a in sec.faculty_assignments.all():
+                db.session.delete(a)
+            for s in sec.attendance_sessions.all():
+                db.session.delete(s)
+            for e in sec.enrollments.all():
+                db.session.delete(e)
+            db.session.delete(sec)
+
+        for subj in prog.subjects.all():
+            for s in subj.attendance_sessions.all():
+                db.session.delete(s)
+            for a in subj.faculty_assignments.all():
+                db.session.delete(a)
+            db.session.delete(subj)
+
+        for st in prog.students.all():
+            for rec in st.attendance_records.all():
+                db.session.delete(rec)
+            for en in st.enrollments.all():
+                db.session.delete(en)
+            db.session.delete(st)
+        db.session.delete(prog)
     
     code = dept.code
     name = dept.name
-    log_action(current_user.id, 'delete', 'department', dept.id, f'Deleted department {code} ({name})')
+    log_action(current_user.id, 'delete', 'department', dept.id, f'Deleted department {code} ({name}) and cascaded related records')
     db.session.delete(dept)
     db.session.commit()
-    flash(f'Department "{name}" ({code}) has been deleted.', 'success')
+    flash(f'Department "{name}" ({code}) and its related records have been deleted.', 'success')
     return redirect(url_for('academic.departments'))
 
 
@@ -249,22 +279,37 @@ def delete_department(dept_id):
 @super_admin_required
 def delete_program(prog_id):
     prog = Program.query.get_or_404(prog_id)
-    if prog.sections.count() > 0:
-        flash(f'Cannot delete program "{prog.name}" because it has associated sections.', 'danger')
-        return redirect(url_for('academic.programs'))
-    if prog.subjects.count() > 0:
-        flash(f'Cannot delete program "{prog.name}" because it has associated subjects.', 'danger')
-        return redirect(url_for('academic.programs'))
-    if prog.students.count() > 0:
-        flash(f'Cannot delete program "{prog.name}" because it has enrolled students.', 'danger')
-        return redirect(url_for('academic.programs'))
+    
+    for sec in prog.sections.all():
+        Student.query.filter_by(section_id=sec.id).update({'section_id': None})
+        for a in sec.faculty_assignments.all():
+            db.session.delete(a)
+        for s in sec.attendance_sessions.all():
+            db.session.delete(s)
+        for e in sec.enrollments.all():
+            db.session.delete(e)
+        db.session.delete(sec)
+
+    for subj in prog.subjects.all():
+        for s in subj.attendance_sessions.all():
+            db.session.delete(s)
+        for a in subj.faculty_assignments.all():
+            db.session.delete(a)
+        db.session.delete(subj)
+
+    for st in prog.students.all():
+        for rec in st.attendance_records.all():
+            db.session.delete(rec)
+        for en in st.enrollments.all():
+            db.session.delete(en)
+        db.session.delete(st)
     
     code = prog.code
     name = prog.name
-    log_action(current_user.id, 'delete', 'program', prog.id, f'Deleted program {code} ({name})')
+    log_action(current_user.id, 'delete', 'program', prog.id, f'Deleted program {code} ({name}) and cascaded related records')
     db.session.delete(prog)
     db.session.commit()
-    flash(f'Program "{name}" ({code}) has been deleted.', 'success')
+    flash(f'Program "{name}" ({code}) and its related records have been deleted.', 'success')
     return redirect(url_for('academic.programs'))
 
 
@@ -273,15 +318,25 @@ def delete_program(prog_id):
 @super_admin_required
 def delete_academic_year(year_id):
     year = AcademicYear.query.get_or_404(year_id)
-    if year.sections.count() > 0:
-        flash(f'Cannot delete academic year "{year.label}" because sections are mapped to it.', 'danger')
-        return redirect(url_for('academic.academic_years'))
-    if year.faculty_assignments.count() > 0:
-        flash(f'Cannot delete academic year "{year.label}" because faculty assignments exist for it.', 'danger')
-        return redirect(url_for('academic.academic_years'))
+    
+    from app.models.audit import InstitutionSettings
+    InstitutionSettings.query.filter_by(academic_year_id=year.id).update({'academic_year_id': None})
+
+    for sec in year.sections.all():
+        Student.query.filter_by(section_id=sec.id).update({'section_id': None})
+        for a in sec.faculty_assignments.all():
+            db.session.delete(a)
+        for s in sec.attendance_sessions.all():
+            db.session.delete(s)
+        for e in sec.enrollments.all():
+            db.session.delete(e)
+        db.session.delete(sec)
+
+    for fa in year.faculty_assignments.all():
+        db.session.delete(fa)
     
     label = year.label
-    log_action(current_user.id, 'delete', 'academic_year', year.id, f'Deleted academic year {label}')
+    log_action(current_user.id, 'delete', 'academic_year', year.id, f'Deleted academic year {label} and cascaded related records')
     db.session.delete(year)
     db.session.commit()
     flash(f'Academic year "{label}" has been deleted.', 'success')
@@ -293,11 +348,13 @@ def delete_academic_year(year_id):
 @super_admin_required
 def delete_section(section_id):
     section = Section.query.get_or_404(section_id)
-    if section.enrollments.count() > 0:
-        flash(f'Cannot delete section "{section.display_name}" because students are currently enrolled in it. Reassign or remove enrollments first.', 'danger')
-        return redirect(url_for('academic.sections'))
     
-    # Cascade delete faculty assignments and attendance sessions
+    # Detach students from this section
+    Student.query.filter_by(section_id=section.id).update({'section_id': None})
+    
+    # Cascade delete enrollments, faculty assignments and attendance sessions
+    for e in section.enrollments.all():
+        db.session.delete(e)
     for a in section.faculty_assignments.all():
         db.session.delete(a)
     for s in section.attendance_sessions.all():

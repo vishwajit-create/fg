@@ -148,10 +148,11 @@ def archive(student_id):
 @super_admin_required
 def delete(student_id):
     student = Student.query.get_or_404(student_id)
-    if student.attendance_records.count() > 0:
-        flash(f'Cannot delete student "{student.full_name}" because attendance records exist for them. You can Archive them instead.', 'danger')
-        return redirect(url_for('students.index'))
     
+    # Cascade delete any attendance records
+    for r in student.attendance_records.all():
+        db.session.delete(r)
+
     # Remove enrollments
     for e in student.enrollments.all():
         db.session.delete(e)
@@ -159,7 +160,7 @@ def delete(student_id):
     roll = student.roll_number
     name = student.full_name
     log_action(current_user.id, 'delete', 'student', student.id,
-               f'Deleted student {roll} ({name})')
+               f'Deleted student {roll} ({name}) and cascaded attendance records')
     db.session.delete(student)
     db.session.commit()
     flash(f'Student "{name}" ({roll}) has been permanently deleted.', 'success')
