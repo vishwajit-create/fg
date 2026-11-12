@@ -13,6 +13,5 @@ def register_error_handlers(app):
 
     @app.errorhandler(Exception)
     def handle_exception(e):
-        tb = traceback.format_exc()
-        app.logger.error(f'Server Error: {e}\n{tb}')
-        return f"<div id='server-error-trace' style='display:block;background:#fee;border:1px solid red;padding:15px;margin:20px;font-family:monospace;'><h3>[DEBUG ERROR] {type(e).__name__}: {e}</h3><pre>{tb}</pre></div>" + render_template('errors/500.html'), 500
+        app.logger.error(f'Server Error: {e}\n{traceback.format_exc()}')
+        return render_template('errors/500.html'), 500

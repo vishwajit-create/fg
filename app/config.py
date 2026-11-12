@@ -9,8 +9,18 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     db_url = os.environ.get('DATABASE_URL')
-    if db_url and db_url.startswith('postgres://'):
-        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+    if db_url:
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+        elif db_url.startswith('postgresql://'):
+            db_url = db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+
+        # Automatic IPv4 Pooler conversion for Supabase on IPv6-restricted hosts (like Render)
+        if 'db.ckgilqoqprkeutxvzmth.supabase.co' in db_url:
+            db_url = db_url.replace('@db.ckgilqoqprkeutxvzmth.supabase.co', '@aws-1-ap-northeast-1.pooler.supabase.com')
+            if '://postgres:' in db_url:
+                db_url = db_url.replace('://postgres:', '://postgres.ckgilqoqprkeutxvzmth:')
+
     SQLALCHEMY_DATABASE_URI = db_url or \
         'sqlite:///' + os.path.join(basedir, 'instance', 'csfms.db').replace('\\', '/')
 
