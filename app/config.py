@@ -15,6 +15,10 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'instance', 'csfms.db').replace('\\', '/')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 280,
+    }
     WTF_CSRF_ENABLED = True
     INSTITUTION_NAME = os.environ.get('INSTITUTION_NAME', 'College Student & Faculty Management System')
     TIMEZONE = os.environ.get('TIMEZONE', 'Asia/Kolkata')
