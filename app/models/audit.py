@@ -11,7 +11,7 @@ class AuditLog(db.Model):
     entity_type = db.Column(db.String(50))  # student, faculty, attendance_session, etc.
     entity_id = db.Column(db.Integer)
     change_summary = db.Column(db.Text)
-    ip_address = db.Column(db.String(45))
+    ip_address = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     actor = db.relationship('User', back_populates='audit_logs')
